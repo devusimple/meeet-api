@@ -7,7 +7,8 @@ from ..core.dependencies import get_current_user
 from ..core.images import (
     ALLOWED_AVATAR_CONTENT_TYPES,
     compress_avatar,
-    decode_image_base64,
+    content_type_from_data_url,
+    decode_avatar_data,
 )
 from ..models.user import User
 from ..schemas.user import AvatarUpload, UserResponse, UserUpdate
@@ -76,14 +77,20 @@ def upload_avatar(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if payload.content_type not in ALLOWED_AVATAR_CONTENT_TYPES:
+    content_type = payload.content_type or content_type_from_data_url(payload.data)
+    if not content_type:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported content type; allowed: {sorted(ALLOWED_AVATAR_CONTENT_TYPES)}",
+            detail="content_type is required or must be included in the data URL",
         )
-    raw = decode_image_base64(payload.data)
+    if content_type not in ALLOWED_AVATAR_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported content type {content_type!r}; allowed: {sorted(ALLOWED_AVATAR_CONTENT_TYPES)}",
+        )
+    raw = decode_avatar_data(payload.data)
     current_user.avatar = compress_avatar(raw)
-    current_user.avatar_content_type = payload.content_type
+    current_user.avatar_content_type = content_type
     db.commit()
     db.refresh(current_user)
     return current_user

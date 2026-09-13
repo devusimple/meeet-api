@@ -44,7 +44,7 @@ class UserResponse(BaseModel):
 
 
 class AvatarUpload(BaseModel):
-    content_type: str
+    content_type: str | None = None
     data: str
 
 
