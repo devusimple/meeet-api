@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Form, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -28,6 +28,22 @@ from ..schemas.user import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+
+class EmailPasswordForm(OAuth2PasswordRequestForm):
+    def __init__(
+        self,
+        *,
+        email: str = Form(..., description="Your email address"),
+        password: str = Form(...),
+        scope: str = Form(""),
+    ):
+        self.grant_type = None
+        self.username = email
+        self.password = password
+        self.scopes = scope.split()
+        self.client_id = None
+        self.client_secret = None
 
 
 def _issue_tokens(db: Session, user: User) -> dict:
@@ -73,7 +89,7 @@ def register(payload: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=TokenResponse)
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    form_data: EmailPasswordForm = Depends(),
     db: Session = Depends(get_db),
 ):
     user = db.query(User).filter(User.email == form_data.username).first()

@@ -21,6 +21,18 @@ def decompress_avatar(data: bytes) -> bytes:
     return zlib.decompress(data)
 
 
+def sniff_content_type(data: bytes) -> str | None:
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith((b"GIF87a", b"GIF89a")):
+        return "image/gif"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
+
 def decode_image_base64(data: str) -> bytes:
     try:
         raw = base64.b64decode(data, validate=True)

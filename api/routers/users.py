@@ -8,6 +8,7 @@ from ..core.images import (
     ALLOWED_AVATAR_CONTENT_TYPES,
     compress_avatar,
     decode_image_base64,
+    sniff_content_type,
 )
 from ..models.user import User
 from ..schemas.user import AvatarUpload, UserResponse, UserUpdate
@@ -82,8 +83,18 @@ def upload_avatar(
             detail=f"Unsupported content type; allowed: {sorted(ALLOWED_AVATAR_CONTENT_TYPES)}",
         )
     raw = decode_image_base64(payload.data)
+    actual_type = sniff_content_type(raw)
+    if actual_type is None:
+        raise HTTPException(
+            status_code=400, detail="File is not a recognized image format"
+        )
+    if actual_type != payload.content_type:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Declared content type does not match actual image format ({actual_type})",
+        )
     current_user.avatar = compress_avatar(raw)
-    current_user.avatar_content_type = payload.content_type
+    current_user.avatar_content_type = actual_type
     db.commit()
     db.refresh(current_user)
     return current_user
