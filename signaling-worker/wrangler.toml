@@ -1,0 +1,15 @@
+name = "meeet-signaling"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+
+[durable_objects]
+bindings = [{ name = "SIGNALING_ROOM", class_name = "SignalingRoom" }]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["SignalingRoom"]
+
+# Optional: set a shared secret so only your devices can connect.
+# Leave empty to allow open rooms (personal use).
+[vars]
+SIGNALING_KEY = ""

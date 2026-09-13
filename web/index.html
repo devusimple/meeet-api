@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeet App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .hidden-view { display: none !important; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <!-- ================= AUTH VIEW ================= -->
+    <div id="auth-view" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-slate-100 overflow-hidden fade-in">
+            <!-- Tabs -->
+            <div class="flex border-b border-slate-100">
+                <button onclick="switchAuthTab('login')" id="tab-login" class="flex-1 py-4 text-sm font-semibold text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50/50 transition-colors">Login</button>
+                <button onclick="switchAuthTab('register')" id="tab-register" class="flex-1 py-4 text-sm font-semibold text-slate-500 hover:text-slate-700 transition-colors">Register</button>
+            </div>
+
+            <div class="p-8">
+                <!-- Login Form -->
+                <form id="login-form" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Username or Email</label>
+                        <input type="text" name="username" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="you@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                        <input type="password" name="password" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="••••••••">
+                    </div>
+                    <button type="submit" id="login-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <span>Sign In</span>
+                    </button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="space-y-5 hidden-view">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                        <input type="text" name="name" required minlength="1" maxlength="100" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                        <input type="email" name="email" required class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="you@example.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                        <input type="password" name="password" required minlength="8" maxlength="128" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all" placeholder="Min 8 characters">
+                    </div>
+                    <button type="submit" id="register-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <span>Create Account</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= DASHBOARD VIEW ================= -->
+    <div id="dashboard-view" class="hidden-view min-h-screen flex flex-col md:flex-row">
+        <!-- Sidebar -->
+        <aside class="w-full md:w-64 bg-white border-r border-slate-200 flex flex-col">
+            <div class="p-6 border-b border-slate-100">
+                <h1 class="text-2xl font-bold text-indigo-600 tracking-tight">Meeet.</h1>
+            </div>
+            <nav class="flex-1 p-4 space-y-1">
+                <button onclick="switchDashboardTab('users')" id="nav-users" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg bg-indigo-50 text-indigo-700 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    All Users
+                </button>
+                <button onclick="switchDashboardTab('profile')" id="nav-profile" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    My Profile
+                </button>
+            </nav>
+            <div class="p-4 border-t border-slate-100">
+                <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-red-600 hover:bg-red-50 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                    Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 bg-slate-50 p-4 md:p-8 overflow-y-auto">
+            
+            <!-- Users List Tab -->
+            <div id="tab-content-users" class="fade-in max-w-5xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">Directory</h2>
+                    <button onclick="fetchUsers()" class="px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        Refresh
+                    </button>
+                </div>
+                <div id="users-list-container" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-8 text-center text-slate-500">Loading users...</div>
+                </div>
+            </div>
+
+            <!-- Profile Tab -->
+            <div id="tab-content-profile" class="hidden-view fade-in max-w-3xl mx-auto">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6">My Profile</h2>
+                
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 md:p-8 space-y-8">
+                    <!-- Avatar Section -->
+                    <div class="flex flex-col sm:flex-row items-center gap-6 pb-8 border-b border-slate-100">
+                        <div class="relative group">
+                            <img id="profile-avatar" src="https://ui-avatars.com/api/?name=User&background=6366f1&color=fff" class="w-24 h-24 rounded-full object-cover border-4 border-slate-50 shadow-md transition-opacity duration-300">
+                            
+                            <!-- Hover Overlay -->
+                            <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer" onclick="document.getElementById('avatar-input').click()">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            </div>
+                            
+                            <!-- Loading Overlay -->
+                            <div id="avatar-loading" class="absolute inset-0 bg-white/70 rounded-full flex items-center justify-center hidden">
+                                <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                            </div>
+                            
+                            <input type="file" id="avatar-input" accept="image/png, image/jpeg, image/gif, image/webp" class="hidden" onchange="handleAvatarUpload(this)">
+                        </div>
+                        
+                        <div class="text-center sm:text-left flex-1">
+                            <h3 class="text-lg font-semibold text-slate-800">Profile Picture</h3>
+                            <p class="text-sm text-slate-500 mb-4">PNG, JPG, GIF or WebP. Max size 2MB.</p>
+                            <div class="flex gap-3 justify-center sm:justify-start">
+                                <button onclick="document.getElementById('avatar-input').click()" class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">Upload New</button>
+                                <button onclick="handleAvatarDelete()" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Details Form -->
+                    <form id="profile-form" class="space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                                <input type="text" name="name" id="profile-name" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                                <input type="email" name="email" id="profile-email" class="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 pt-2">
+                            <input type="checkbox" id="profile-is-active" name="is_active" class="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500">
+                            <label for="profile-is-active" class="text-sm font-medium text-slate-700">Account Active</label>
+                        </div>
+                        <div class="pt-4">
+                            <button type="submit" id="save-profile-btn" class="px-6 py-2.5 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2">
+                                <span>Save Changes</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // ==== CONFIG ====
+        // For real testing: run the backend locally from the project root:
+        //   uvicorn api.main:app --reload
+        const API_BASE = 'http://localhost:8000';
+        // When the API is deployed to Vercel, uncomment the line below:
+        // const API_BASE = 'https://meeet-api.vercel.app';
+        
+        // State Management
+        const state = {
+            accessToken: localStorage.getItem('meeet_access_token'),
+            refreshToken: localStorage.getItem('meeet_refresh_token'),
+            user: null,
+            users: []
+        };
+
+        // --- Utility Functions ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = type === 'success' ? 'bg-emerald-500' : (type === 'error' ? 'bg-red-500' : 'bg-blue-500');
+            toast.className = `${colors} text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 fade-in min-w-[250px]`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                ${message}
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function setLoading(btnId, isLoading) {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            if (isLoading) {
+                btn.dataset.originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = `<svg class="animate-spin h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...`;
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = btn.dataset.originalText;
+            }
+        }
+
+        function getHeaders() {
+            return {
+                'Authorization': `Bearer ${state.accessToken}`,
+                'Content-Type': 'application/json'
+            };
+        }
+
+        // --- Token Refresh (keeps the session alive past the 30-min access token) ---
+        async function tryRefreshToken() {
+            if (!state.refreshToken) return false;
+            try {
+                const res = await fetch(`${API_BASE}/auth/refresh`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh_token: state.refreshToken })
+                });
+                if (!res.ok) return false;
+                const data = await res.json();
+                state.accessToken = data.access_token;
+                state.refreshToken = data.refresh_token;
+                localStorage.setItem('meeet_access_token', data.access_token);
+                localStorage.setItem('meeet_refresh_token', data.refresh_token);
+                return true;
+            } catch (err) {
+                return false;
+            }
+        }
+
+        // Authenticated fetch: retries once with a refreshed token on 401.
+        async function apiFetch(url, options = {}) {
+            const merged = {
+                ...options,
+                headers: { ...getHeaders(), ...(options.headers || {}) }
+            };
+            let res = await fetch(url, merged);
+            if (res.status === 401 && state.refreshToken) {
+                if (await tryRefreshToken()) {
+                    res = await fetch(url, merged);
+                } else {
+                    await handleLogout();
+                }
+            }
+            return res;
+        }
+
+        // --- Auth Functions ---
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+
+            if (tab === 'login') {
+                loginForm.classList.remove('hidden-view');
+                registerForm.classList.add('hidden-view');
+                tabLogin.classList.add('text-indigo-600', 'border-b-2', 'border-indigo-600', 'bg-indigo-50/50');
+                tabLogin.classList.remove('text-slate-500');
+                tabRegister.classList.remove('text-indigo-600', 'border-b-2', 'border-indigo-600', 'bg-indigo-50/50');
+                tabRegister.classList.add('text-slate-500');
+            } else {
+                loginForm.classList.add('hidden-view');
+                registerForm.classList.remove('hidden-view');
+                tabRegister.classList.add('text-indigo-600', 'border-b-2', 'border-indigo-600', 'bg-indigo-50/50');
+                tabRegister.classList.remove('text-slate-500');
+                tabLogin.classList.remove('text-indigo-600', 'border-b-2', 'border-indigo-600', 'bg-indigo-50/50');
+                tabLogin.classList.add('text-slate-500');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            setLoading('login-btn', true);
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        username: formData.get('username'),
+                        password: formData.get('password'),
+                        grant_type: 'password'
+                    })
+                });
+
+                if (!response.ok) throw new Error('Invalid credentials');
+                
+                const data = await response.json();
+                state.accessToken = data.access_token;
+                state.refreshToken = data.refresh_token;
+                localStorage.setItem('meeet_access_token', data.access_token);
+                localStorage.setItem('meeet_refresh_token', data.refresh_token);
+                
+                showToast('Welcome back!');
+                await initializeApp();
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                setLoading('login-btn', false);
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            setLoading('register-btn', true);
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: formData.get('name'),
+                        email: formData.get('email'),
+                        password: formData.get('password')
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.detail?.[0]?.msg || 'Registration failed');
+                }
+                
+                showToast('Account created! Please log in.');
+                switchAuthTab('login');
+                e.target.reset();
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                setLoading('register-btn', false);
+            }
+        }
+
+        async function handleLogout() {
+            if (state.refreshToken) {
+                try {
+                    await fetch(`${API_BASE}/auth/logout`, {
+                        method: 'POST',
+                        headers: getHeaders(),
+                        body: JSON.stringify({ refresh_token: state.refreshToken })
+                    });
+                } catch (e) { /* Ignore logout errors */ }
+            }
+            state.accessToken = null;
+            state.refreshToken = null;
+            state.user = null;
+            localStorage.removeItem('meeet_access_token');
+            localStorage.removeItem('meeet_refresh_token');
+            
+            document.getElementById('dashboard-view').classList.add('hidden-view');
+            document.getElementById('auth-view').classList.remove('hidden-view');
+            showToast('Logged out successfully');
+        }
+
+        // --- Dashboard Functions ---
+        function switchDashboardTab(tab) {
+            const usersContent = document.getElementById('tab-content-users');
+            const profileContent = document.getElementById('tab-content-profile');
+            const navUsers = document.getElementById('nav-users');
+            const navProfile = document.getElementById('nav-profile');
+
+            if (tab === 'users') {
+                usersContent.classList.remove('hidden-view');
+                profileContent.classList.add('hidden-view');
+                navUsers.classList.add('bg-indigo-50', 'text-indigo-700');
+                navUsers.classList.remove('text-slate-600', 'hover:bg-slate-50');
+                navProfile.classList.remove('bg-indigo-50', 'text-indigo-700');
+                navProfile.classList.add('text-slate-600', 'hover:bg-slate-50');
+                fetchUsers();
+            } else {
+                usersContent.classList.add('hidden-view');
+                profileContent.classList.remove('hidden-view');
+                navProfile.classList.add('bg-indigo-50', 'text-indigo-700');
+                navProfile.classList.remove('text-slate-600', 'hover:bg-slate-50');
+                navUsers.classList.remove('bg-indigo-50', 'text-indigo-700');
+                navUsers.classList.add('text-slate-600', 'hover:bg-slate-50');
+                populateProfileForm();
+            }
+        }
+
+        async function fetchMe() {
+            try {
+                const res = await apiFetch(`${API_BASE}/auth/me`);
+                if (!res.ok) throw new Error('Session expired');
+                state.user = await res.json();
+                return state.user;
+            } catch (err) {
+                handleLogout();
+                throw err;
+            }
+        }
+
+        async function fetchUsers() {
+            const container = document.getElementById('users-list-container');
+            container.innerHTML = `<div class="p-8 text-center text-slate-500 flex justify-center items-center gap-2"><svg class="animate-spin h-5 w-5 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Loading directory...</div>`;
+            
+            try {
+                const res = await apiFetch(`${API_BASE}/users?skip=0&limit=100`);
+                if (!res.ok) throw new Error('Failed to fetch users');
+                state.users = await res.json();
+                renderUsersList();
+            } catch (err) {
+                container.innerHTML = `<div class="p-8 text-center text-red-500">Error loading users. Please try again.</div>`;
+            }
+        }
+
+        function renderUsersList() {
+            const container = document.getElementById('users-list-container');
+            if (state.users.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-slate-500">No users found.</div>`;
+                return;
+            }
+
+            const html = `
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-medium">
+                            <tr>
+                                <th class="px-6 py-4">User</th>
+                                <th class="px-6 py-4">Email</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4">Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            ${state.users.map(user => `
+                                <tr class="hover:bg-slate-50/80 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            ${user.avatar ? 
+                                                `<img src="${user.avatar.startsWith('http') || user.avatar.startsWith('data:') ? user.avatar : `data:${user.avatar_content_type || 'image/png'};base64,${user.avatar}`}" class="w-8 h-8 rounded-full object-cover">` : 
+                                                `<div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-xs">${user.name.charAt(0).toUpperCase()}</div>`
+                                            }
+                                            <span class="font-medium text-slate-900">${user.name}</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-600">${user.email}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${user.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800'}">
+                                            ${user.is_active ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-500">${new Date(user.created_at).toLocaleDateString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        function populateProfileForm() {
+            if (!state.user) return;
+            document.getElementById('profile-name').value = state.user.name;
+            document.getElementById('profile-email').value = state.user.email;
+            document.getElementById('profile-is-active').checked = state.user.is_active;
+            
+            const avatarImg = document.getElementById('profile-avatar');
+            if (state.user.avatar) {
+                // Smart rendering: handle URL, Data URI, or raw Base64
+                if (state.user.avatar.startsWith('http') || state.user.avatar.startsWith('data:')) {
+                    avatarImg.src = state.user.avatar;
+                } else {
+                    const contentType = state.user.avatar_content_type || 'image/png';
+                    avatarImg.src = `data:${contentType};base64,${state.user.avatar}`;
+                }
+            } else {
+                avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(state.user.name)}&background=6366f1&color=fff`;
+            }
+        }
+
+        async function handleProfileUpdate(e) {
+            e.preventDefault();
+            setLoading('save-profile-btn', true);
+            
+            const payload = {
+                name: document.getElementById('profile-name').value,
+                email: document.getElementById('profile-email').value,
+                is_active: document.getElementById('profile-is-active').checked
+            };
+
+            try {
+                const res = await apiFetch(`${API_BASE}/users/${state.user.id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.detail?.[0]?.msg || 'Failed to update profile');
+                }
+                
+                state.user = await res.json();
+                showToast('Profile updated successfully');
+                populateProfileForm();
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                setLoading('save-profile-btn', false);
+            }
+        }
+
+        // --- IMPROVED AVATAR UPLOAD LOGIC ---
+        async function handleAvatarUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            // 1. Validate file type
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                showToast('Invalid file type. Please upload PNG, JPG, GIF, or WebP.', 'error');
+                input.value = '';
+                return;
+            }
+
+            // 2. Validate file size (max 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                showToast('File size must be less than 2MB.', 'error');
+                input.value = '';
+                return;
+            }
+
+            const loadingOverlay = document.getElementById('avatar-loading');
+            loadingOverlay.classList.remove('hidden');
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const dataUrl = e.target.result;
+                // dataUrl format: "data:image/png;base64,iVBORw0KG..."
+                const base64Data = dataUrl.split(',')[1];
+                const contentType = file.type; // Safer than regex parsing the header
+
+                try {
+                    const res = await apiFetch(`${API_BASE}/users/me/avatar`, {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            content_type: contentType,
+                            data: base64Data
+                        })
+                    });
+
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => ({}));
+                        throw new Error(errData.detail?.[0]?.msg || 'Failed to upload avatar');
+                    }
+                    
+                    state.user = await res.json();
+                    populateProfileForm();
+                    showToast('Avatar updated successfully!');
+                } catch (err) {
+                    showToast(err.message, 'error');
+                } finally {
+                    loadingOverlay.classList.add('hidden');
+                    input.value = ''; // Reset so the same file can be selected again if needed
+                }
+            };
+            
+            reader.onerror = () => {
+                showToast('Failed to read file.', 'error');
+                loadingOverlay.classList.add('hidden');
+                input.value = '';
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        async function handleAvatarDelete() {
+            if (!confirm('Are you sure you want to delete your avatar?')) return;
+            
+            const loadingOverlay = document.getElementById('avatar-loading');
+            loadingOverlay.classList.remove('hidden');
+
+            try {
+                const res = await apiFetch(`${API_BASE}/users/me/avatar`, {
+                    method: 'DELETE'
+                });
+
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.detail?.[0]?.msg || 'Failed to delete avatar');
+                }
+                
+                state.user = await res.json();
+                populateProfileForm();
+                showToast('Avatar removed');
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                loadingOverlay.classList.add('hidden');
+            }
+        }
+
+        // --- Initialization ---
+        async function initializeApp() {
+            if (state.accessToken) {
+                try {
+                    await fetchMe();
+                    document.getElementById('auth-view').classList.add('hidden-view');
+                    document.getElementById('dashboard-view').classList.remove('hidden-view');
+                    switchDashboardTab('users');
+                } catch (err) {
+                    console.error('Auth failed', err);
+                    handleLogout();
+                }
+            } else {
+                document.getElementById('auth-view').classList.remove('hidden-view');
+                document.getElementById('dashboard-view').classList.add('hidden-view');
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+        document.getElementById('register-form').addEventListener('submit', handleRegister);
+        document.getElementById('profile-form').addEventListener('submit', handleProfileUpdate);
+
+        // Boot
+        initializeApp();
+    </script>
+</body>
+</html>

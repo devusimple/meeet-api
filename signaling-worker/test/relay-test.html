@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Meeet signaling relay test</title>
+</head>
+<body>
+  <h1>Signaling relay test</h1>
+  <p>Open this page in <strong>two tabs</strong> with the same room to verify the relay.
+     Messages sent from one tab appear in the other.</p>
+  <label>Server<br><input id="server" value="ws://localhost:8787/ws" style="width:100%" /></label><br>
+  <label>Room <input id="room" value="demo" /></label>
+  <label>Peer (optional) <input id="peer" /></label>
+  <label>Key (optional) <input id="key" /></label><br>
+  <button id="connect">Connect</button>
+  <button id="disconnect" disabled>Disconnect</button>
+  <hr>
+  <label>Send raw signal data<br>
+    <textarea id="out" rows="4" style="width:100%">{"type":"offer","sdp":"REAL_SDP_HERE"}</textarea>
+  </label><br>
+  <button id="send" disabled>Send</button>
+  <h3>Log</h3>
+  <pre id="log" style="background:#f4f4f4;padding:8px;min-height:120px"></pre>
+
+  <script>
+    let ws = null;
+    const $ = (id) => document.getElementById(id);
+    const log = (msg) => ($("log").textContent = new Date().toISOString() + " " + msg + "\n" + $("log").textContent);
+
+    $("connect").onclick = () => {
+      const url = new URL($("server").value);
+      url.searchParams.set("room", $("room").value || "demo");
+      if ($("peer").value) url.searchParams.set("peer", $("peer").value);
+      if ($("key").value) url.searchParams.set("key", $("key").value);
+      ws = new WebSocket(url.toString());
+      ws.onopen = () => { log("OPEN " + url.pathname); $("send").disabled = false; $("disconnect").disabled = false; $("connect").disabled = true; };
+      ws.onmessage = (e) => log("IN  " + e.data.replace(/\s+/g, " ").slice(0, 120));
+      ws.onclose = (e) => log("CLOSE " + e.code);
+      ws.onerror = (e) => log("ERROR");
+    };
+    $("disconnect").onclick = () => ws && ws.close();
+    $("send").onclick = () => { if (ws) { ws.send($("out").value); log("OUT " + $("out").value.replace(/\s+/g, " ").slice(0, 120)); } };
+  </script>
+</body>
+</html>
