@@ -165,24 +165,56 @@
                 </div>
             </div>
 
+            <!-- Chat Tab -->
+            <div id="tab-content-chat" class="hidden-view fade-in max-w-3xl mx-auto" style="height: calc(100vh - 8rem);">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col h-full overflow-hidden">
+                    <!-- Chat Header -->
+                    <div class="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
+                        <button onclick="closeChat()" class="inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                            Back
+                        </button>
+                        <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-semibold text-sm shrink-0" id="chat-avatar">?</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-slate-900 truncate" id="chat-peer-name">Chat</div>
+                            <div class="text-xs text-slate-500" id="chat-peer-status">connecting...</div>
+                        </div>
+                    </div>
+                    <!-- Messages -->
+                    <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50"></div>
+                    <!-- Input -->
+                    <div class="flex gap-2 p-4 border-t border-slate-100">
+                        <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off"
+                               class="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                               onkeydown="if(event.key === 'Enter') sendChat()">
+                        <button onclick="sendChat()" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                            Send
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
     <!-- ================= JAVASCRIPT LOGIC ================= -->
     <script>
         // ==== CONFIG ====
-        // For real testing: run the backend locally from the project root:
+        const API_BASE = 'https://meeet-api.vercel.app';
+        // Local testing: run the backend locally from the project root:
         //   uvicorn api.main:app --reload
-        const API_BASE = 'http://localhost:8000';
-        // When the API is deployed to Vercel, uncomment the line below:
-        // const API_BASE = 'https://meeet-api.vercel.app';
+        //   const API_BASE = 'http://localhost:8000';
+        // Cloudflare Worker used as the real-time message relay (no storage).
+        const SIGNALING_WS_URL = 'wss://meeet-signaling.meeet-signaling-server.workers.dev/ws';
         
         // State Management
         const state = {
             accessToken: localStorage.getItem('meeet_access_token'),
             refreshToken: localStorage.getItem('meeet_refresh_token'),
             user: null,
-            users: []
+            users: [],
+            chat: { socket: null, peerUser: null, room: null, messages: [] }
         };
 
         // --- Utility Functions ---
@@ -438,6 +470,7 @@
                                 <th class="px-6 py-4">Email</th>
                                 <th class="px-6 py-4">Status</th>
                                 <th class="px-6 py-4">Joined</th>
+                                <th class="px-6 py-4 text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -459,6 +492,13 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 text-slate-500">${new Date(user.created_at).toLocaleDateString()}</td>
+                                    ${user.id !== state.user.id ? `
+                                    <td class="px-6 py-4 text-right">
+                                        <button onclick="openChat(${user.id})" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                            Message
+                                        </button>
+                                    </td>` : ''}
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -486,6 +526,118 @@
             } else {
                 avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(state.user.name)}&background=6366f1&color=fff`;
             }
+        }
+
+        // --- CHAT ---
+        function setChatStatus(text, online) {
+            const el = document.getElementById('chat-peer-status');
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'text-xs ' + (online ? 'text-emerald-600' : 'text-slate-500');
+        }
+
+        function openChat(userId) {
+            const peerUser = state.users.find(u => u.id === userId);
+            if (!peerUser) return;
+            state.chat.peerUser = peerUser;
+            state.chat.messages = [];
+
+            const avatarEl = document.getElementById('chat-avatar');
+            if (peerUser.avatar) {
+                if (peerUser.avatar.startsWith('http') || peerUser.avatar.startsWith('data:')) {
+                    avatarEl.style.backgroundImage = `url("${peerUser.avatar}")`;
+                } else {
+                    const ct = peerUser.avatar_content_type || 'image/png';
+                    avatarEl.style.backgroundImage = `url("data:${ct};base64,${peerUser.avatar}")`;
+                }
+                avatarEl.style.backgroundSize = 'cover';
+                avatarEl.textContent = '';
+            } else {
+                avatarEl.style.backgroundImage = '';
+                avatarEl.textContent = peerUser.name.charAt(0).toUpperCase();
+            }
+
+            document.getElementById('chat-peer-name').textContent = peerUser.name;
+            setChatStatus('connecting...', false);
+            renderChatMessages();
+
+            document.getElementById('tab-content-users').classList.add('hidden-view');
+            document.getElementById('tab-content-chat').classList.remove('hidden-view');
+            document.getElementById('chat-input').focus();
+
+            connectChat();
+        }
+
+        function connectChat() {
+            const a = state.user.id;
+            const b = state.chat.peerUser.id;
+            const room = `dm-${Math.min(a, b)}-${Math.max(a, b)}`;
+            state.chat.room = room;
+
+            const url = `${SIGNALING_WS_URL}?room=${encodeURIComponent(room)}&peer=${state.user.id}`;
+            const ws = new WebSocket(url);
+            state.chat.socket = ws;
+
+            ws.onopen = () => setChatStatus('connected', true);
+            ws.onmessage = (e) => {
+                let msg;
+                try { msg = JSON.parse(e.data); } catch (err) { return; }
+                if (msg.type === 'chat') {
+                    state.chat.messages.push(msg);
+                    renderChatMessages();
+                } else if (msg.type === 'peers') {
+                    setChatStatus(msg.count >= 2 ? 'peer is online' : 'waiting for peer...', msg.count >= 2);
+                }
+            };
+            ws.onclose = () => {
+                state.chat.socket = null;
+                setChatStatus('disconnected', false);
+            };
+            ws.onerror = () => {};
+        }
+
+        function sendChat() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            const ws = state.chat.socket;
+            if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+            const msg = { type: 'chat', from: state.user.id, fromName: state.user.name, text: text, ts: Date.now() };
+            state.chat.messages.push(msg);
+            ws.send(JSON.stringify(msg));
+            input.value = '';
+            renderChatMessages();
+        }
+
+        function renderChatMessages() {
+            const el = document.getElementById('chat-messages');
+            if (!el) return;
+            if (state.chat.messages.length === 0) {
+                el.innerHTML = `<div class="h-full flex items-center justify-center text-sm text-slate-400">No messages yet. Say hi!</div>`;
+                return;
+            }
+            el.innerHTML = state.chat.messages.map(m => {
+                const mine = m.from === state.user.id;
+                const time = new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const safe = (m.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return `<div class="flex ${mine ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-[70%] px-4 py-2 rounded-2xl shadow-sm ${mine ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white text-slate-800 rounded-bl-sm'}">
+                        <div class="break-words">${safe}</div>
+                        <div class="text-[10px] mt-0.5 ${mine ? 'text-indigo-200' : 'text-slate-400'}">${time}</div>
+                    </div>
+                </div>`;
+            }).join('');
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function closeChat() {
+            if (state.chat.socket) {
+                state.chat.socket.close();
+                state.chat.socket = null;
+            }
+            state.chat.peerUser = null;
+            state.chat.room = null;
+            document.getElementById('tab-content-chat').classList.add('hidden-view');
+            document.getElementById('tab-content-users').classList.remove('hidden-view');
         }
 
         async function handleProfileUpdate(e) {
